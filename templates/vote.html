@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Diwali Awards - Vote{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>🎆 Cast Your Diwali Vote</h2>
+    <p>Light up the celebration! Vote for your favorite team member in the current Diwali award category!</p>
+    
+    <div id="waiting" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <h3>Waiting for poll to start...</h3>
+        <p>The host will begin the voting session shortly.</p>
+    </div>
+    
+    <div id="voting-section" style="display: none;">
+        <div id="current-question" class="question-display">
+            <span id="question-text">Loading question...</span>
+        </div>
+        
+        <div class="vote-options" id="vote-options">
+            <!-- Vote options will be populated dynamically -->
+        </div>
+        
+        <div id="vote-status" style="text-align: center; margin: 20px 0; font-weight: bold; color: #4CAF50;">
+            <!-- Vote status will be shown here -->
+        </div>
+    </div>
+    
+    <div id="poll-ended" class="loading" style="display: none;">
+        <h3>Poll Ended</h3>
+        <p>Thank you for voting! The results are being calculated.</p>
+        <a href="/results" class="btn">View Results</a>
+    </div>
+</div>
+
+<div class="card">
+    <h3>How to Vote:</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+        <div style="text-align: center; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
+            <div style="font-size: 1.5em; margin-bottom: 8px;">1️⃣</div>
+            <h4>Wait for Poll</h4>
+            <p>Wait for the host to start the voting session</p>
+        </div>
+        <div style="text-align: center; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
+            <div style="font-size: 1.5em; margin-bottom: 8px;">2️⃣</div>
+            <h4>Choose Your Vote</h4>
+            <p>Click on your favorite team member's name</p>
+        </div>
+        <div style="text-align: center; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
+            <div style="font-size: 1.5em; margin-bottom: 8px;">3️⃣</div>
+            <h4>Change Your Mind</h4>
+            <p>You can change your vote anytime before the poll ends</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="navigation">
+        <a href="/results" target="_blank">View Live Results</a>
+        <a href="/admin" target="_blank">Host Controls</a>
+        <a href="/">Back to Home</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const socket = io();
+    let currentVote = null;
+    let isPollingActive = false;
+    let currentQuestion = '';
+
+    // DOM elements
+    const waitingDiv = document.getElementById('waiting');
+    const votingSection = document.getElementById('voting-section');
+    const pollEndedDiv = document.getElementById('poll-ended');
+    const questionText = document.getElementById('question-text');
+    const voteOptions = document.getElementById('vote-options');
+    const voteStatus = document.getElementById('vote-status');
+
+    // Sample team members - you can customize this list
+    const teamMembers = [
+        "Alex Johnson", "Sarah Chen", "Mike Rodriguez", "Emily Davis", "David Kim",
+        "Lisa Wang", "James Wilson", "Maria Garcia", "Tom Brown", "Anna Taylor",
+        "Chris Lee", "Jessica White", "Ryan Miller", "Amanda Clark", "Kevin Zhang",
+        "Rachel Green", "Daniel Park", "Sophie Martin", "Mark Thompson", "Emma Wilson"
+    ];
+
+    // Socket event handlers
+    socket.on('connect', () => {
+        console.log('Connected to voting system');
+    });
+
+    socket.on('status_update', (data) => {
+        isPollingActive = data.is_polling_active || false;
+        currentQuestion = data.current_question || '';
+        
+        if (isPollingActive && currentQuestion) {
+            showVotingInterface();
+        } else {
+            showWaitingInterface();
+        }
+    });
+
+    socket.on('poll_started', (data) => {
+        isPollingActive = true;
+        currentQuestion = data.question;
+        showVotingInterface();
+    });
+
+    socket.on('poll_ended', (data) => {
+        isPollingActive = false;
+        showPollEndedInterface();
+    });
+
+    socket.on('question_changed', (data) => {
+        isPollingActive = true;
+        currentQuestion = data.question;
+        currentVote = null;
+        showVotingInterface();
+    });
+
+    socket.on('all_questions_complete', () => {
+        isPollingActive = false;
+        showPollEndedInterface();
+    });
+
+    function showWaitingInterface() {
+        waitingDiv.style.display = 'block';
+        votingSection.style.display = 'none';
+        pollEndedDiv.style.display = 'none';
+    }
+
+    function showVotingInterface() {
+        waitingDiv.style.display = 'none';
+        votingSection.style.display = 'block';
+        pollEndedDiv.style.display = 'none';
+        
+        // Update question
+        questionText.textContent = currentQuestion;
+        
+        // Generate vote options
+        generateVoteOptions();
+        
+        // Update vote status
+        updateVoteStatus();
+    }
+
+    function showPollEndedInterface() {
+        waitingDiv.style.display = 'none';
+        votingSection.style.display = 'none';
+        pollEndedDiv.style.display = 'block';
+    }
+
+    function generateVoteOptions() {
+        voteOptions.innerHTML = '';
+        
+        // Shuffle team members for variety
+        const shuffledMembers = [...teamMembers].sort(() => Math.random() - 0.5);
+        
+        // Show 4-6 random team members as options
+        const numOptions = Math.min(6, Math.max(4, Math.floor(Math.random() * 3) + 4));
+        const selectedMembers = shuffledMembers.slice(0, numOptions);
+        
+        selectedMembers.forEach(member => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'vote-option';
+            optionDiv.textContent = member;
+            optionDiv.dataset.member = member;
+            
+            if (currentVote === member) {
+                optionDiv.classList.add('selected');
+            }
+            
+            optionDiv.addEventListener('click', () => {
+                voteForMember(member);
+            });
+            
+            voteOptions.appendChild(optionDiv);
+        });
+    }
+
+    function voteForMember(member) {
+        if (!isPollingActive) return;
+        
+        // Update UI
+        document.querySelectorAll('.vote-option').forEach(option => {
+            option.classList.remove('selected');
+        });
+        
+        const selectedOption = document.querySelector(`[data-member="${member}"]`);
+        if (selectedOption) {
+            selectedOption.classList.add('selected');
+        }
+        
+        // Send vote to server
+        socket.emit('vote', { choice: member });
+        currentVote = member;
+        
+        updateVoteStatus();
+    }
+
+    function updateVoteStatus() {
+        if (currentVote) {
+            voteStatus.textContent = `✅ You voted for: ${currentVote}`;
+            voteStatus.style.color = '#4CAF50';
+        } else {
+            voteStatus.textContent = 'Click on a name to cast your vote';
+            voteStatus.style.color = '#666';
+        }
+    }
+
+    // Initialize
+    showWaitingInterface();
+</script>
+{% endblock %}
+

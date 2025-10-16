@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Diwali Awards - Host Controls{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>🪔 Diwali Host Controls</h2>
+    <p>Light up the celebration! Manage the live polling session and control the flow of Diwali awards</p>
+    
+    <div id="status" class="status inactive">
+        <span id="status-text">No active poll</span>
+    </div>
+    
+    <div id="current-question" class="question-display" style="display: none;">
+        <span id="question-text"></span>
+    </div>
+</div>
+
+<div class="card">
+    <h3>🪔 Diwali Poll Controls</h3>
+    <div style="text-align: center; margin: 20px 0;">
+        <button id="start-poll" class="btn">Start Current Poll</button>
+        <button id="end-poll" class="btn btn-danger" style="display: none;">End Poll</button>
+        <button id="next-question" class="btn btn-warning" style="display: none;">Next Question</button>
+    </div>
+    
+    <div style="text-align: center; margin: 20px 0;">
+        <span id="vote-count">Total Votes: 0</span>
+    </div>
+</div>
+
+<div class="card">
+    <h3>🪔 Diwali Award Categories ({{ awards|length }} total)</h3>
+    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 15px;">
+        {% for award in awards %}
+        <div class="award-item" data-index="{{ loop.index0 }}" style="padding: 10px; margin: 5px 0; background: rgba(255, 255, 255, 0.7); border-radius: 5px; cursor: pointer; transition: all 0.3s ease; {% if loop.index0 == 0 %}border-left: 4px solid #4CAF50; background: rgba(76, 175, 80, 0.1);{% endif %}">
+            <strong>{{ loop.index }}.</strong> {{ award }}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <h3>Quick Links</h3>
+    <div class="navigation">
+        <a href="/vote" target="_blank">Open Voting Page</a>
+        <a href="/results" target="_blank">Open Results Page</a>
+        <a href="/">Back to Home</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const socket = io();
+    let currentQuestionIndex = 0;
+    let isPollingActive = false;
+
+    // Award items for selection
+    const awardItems = document.querySelectorAll('.award-item');
+    
+    // Status elements
+    const statusDiv = document.getElementById('status');
+    const statusText = document.getElementById('status-text');
+    const currentQuestionDiv = document.getElementById('current-question');
+    const questionText = document.getElementById('question-text');
+    const voteCount = document.getElementById('vote-count');
+    
+    // Control buttons
+    const startPollBtn = document.getElementById('start-poll');
+    const endPollBtn = document.getElementById('end-poll');
+    const nextQuestionBtn = document.getElementById('next-question');
+
+    // Award selection
+    awardItems.forEach((item, index) => {
+        item.addEventListener('click', () => {
+            // Remove previous selection
+            awardItems.forEach(a => a.style.borderLeft = '4px solid transparent');
+            awardItems.forEach(a => a.style.background = 'rgba(255, 255, 255, 0.7)');
+            
+            // Select current item
+            item.style.borderLeft = '4px solid #4CAF50';
+            item.style.background = 'rgba(76, 175, 80, 0.1)';
+            currentQuestionIndex = index;
+            
+            // Update question display
+            questionText.textContent = item.textContent.replace(/^\d+\.\s*/, '');
+            currentQuestionDiv.style.display = 'block';
+        });
+    });
+
+    // Socket event handlers
+    socket.on('connect', () => {
+        console.log('Connected to server');
+    });
+
+    socket.on('status_update', (data) => {
+        currentQuestionIndex = data.question_index || 0;
+        isPollingActive = data.is_polling_active || false;
+        
+        updateUI();
+        updateVoteCount(data.total_votes || 0);
+    });
+
+    socket.on('poll_started', (data) => {
+        isPollingActive = true;
+        currentQuestionIndex = data.question_index;
+        updateUI();
+    });
+
+    socket.on('poll_ended', (data) => {
+        isPollingActive = false;
+        updateUI();
+        updateVoteCount(data.total_votes || 0);
+    });
+
+    socket.on('question_changed', (data) => {
+        currentQuestionIndex = data.question_index;
+        isPollingActive = true;
+        updateUI();
+    });
+
+    socket.on('vote_update', (data) => {
+        updateVoteCount(data.total_votes || 0);
+    });
+
+    socket.on('all_questions_complete', () => {
+        alert('All award categories have been completed! 🎉');
+        isPollingActive = false;
+        updateUI();
+    });
+
+    // Button event handlers
+    startPollBtn.addEventListener('click', () => {
+        socket.emit('start_poll', { question_index: currentQuestionIndex });
+    });
+
+    endPollBtn.addEventListener('click', () => {
+        socket.emit('end_poll');
+    });
+
+    nextQuestionBtn.addEventListener('click', () => {
+        socket.emit('next_question');
+    });
+
+    function updateUI() {
+        if (isPollingActive) {
+            statusDiv.className = 'status active';
+            statusText.textContent = 'Poll is active - People can vote!';
+            startPollBtn.style.display = 'none';
+            endPollBtn.style.display = 'inline-block';
+            nextQuestionBtn.style.display = 'inline-block';
+        } else {
+            statusDiv.className = 'status inactive';
+            statusText.textContent = 'No active poll';
+            startPollBtn.style.display = 'inline-block';
+            endPollBtn.style.display = 'none';
+            nextQuestionBtn.style.display = 'none';
+        }
+        
+        // Update question display
+        if (awards[currentQuestionIndex]) {
+            questionText.textContent = awards[currentQuestionIndex];
+            currentQuestionDiv.style.display = 'block';
+        }
+    }
+
+    function updateVoteCount(count) {
+        voteCount.textContent = `Total Votes: ${count}`;
+    }
+
+    // Initialize UI
+    updateUI();
+</script>
+{% endblock %}
+

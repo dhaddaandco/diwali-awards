@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Diwali Awards - Live Results{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>✨ Diwali Live Results</h2>
+    <p>Watch the magic unfold! See voting results update in real-time with festive sparkles!</p>
+    
+    <div id="no-poll" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <h3>No active poll</h3>
+        <p>Results will appear here when a poll is started.</p>
+    </div>
+    
+    <div id="results-section" style="display: none;">
+        <div id="current-question" class="question-display">
+            <span id="question-text">Loading question...</span>
+        </div>
+        
+        <div class="results-container">
+            <div class="chart-container">
+                <canvas id="resultsChart"></canvas>
+            </div>
+            
+            <div id="vote-summary" style="text-align: center; margin: 20px 0; font-size: 1.2em; font-weight: bold; color: #2d5a2d;">
+                Total Votes: <span id="total-votes">0</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="poll-ended" class="loading" style="display: none;">
+        <h3>Poll Ended</h3>
+        <p>Final results are displayed below.</p>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Real-time Features:</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+        <div style="text-align: center; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
+            <div style="font-size: 1.5em; margin-bottom: 8px;">⚡</div>
+            <h4>Live Updates</h4>
+            <p>Results update instantly as people vote</p>
+        </div>
+        <div style="text-align: center; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
+            <div style="font-size: 1.5em; margin-bottom: 8px;">📈</div>
+            <h4>Visual Charts</h4>
+            <p>Beautiful bar charts show voting progress</p>
+        </div>
+        <div style="text-align: center; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
+            <div style="font-size: 1.5em; margin-bottom: 8px;">🏆</div>
+            <h4>Winner Tracking</h4>
+            <p>See who's leading in real-time</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="navigation">
+        <a href="/vote" target="_blank">Cast Your Vote</a>
+        <a href="/admin" target="_blank">Host Controls</a>
+        <a href="/">Back to Home</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const socket = io();
+    let chart = null;
+    let isPollingActive = false;
+    let currentQuestion = '';
+    let votes = {};
+    let totalVotes = 0;
+
+    // DOM elements
+    const noPollDiv = document.getElementById('no-poll');
+    const resultsSection = document.getElementById('results-section');
+    const pollEndedDiv = document.getElementById('poll-ended');
+    const questionText = document.getElementById('question-text');
+    const totalVotesSpan = document.getElementById('total-votes');
+
+    // Chart configuration
+    const chartConfig = {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Votes',
+                data: [],
+                backgroundColor: 'rgba(76, 175, 80, 0.8)',
+                borderColor: 'rgba(76, 175, 80, 1)',
+                borderWidth: 2,
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Voting Results',
+                    font: {
+                        size: 18,
+                        weight: 'bold'
+                    },
+                    color: '#2d5a2d'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        color: '#666'
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#666',
+                        maxRotation: 45
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            animation: {
+                duration: 750,
+                easing: 'easeInOutQuart'
+            }
+        }
+    };
+
+    // Initialize chart
+    function initChart() {
+        const ctx = document.getElementById('resultsChart').getContext('2d');
+        chart = new Chart(ctx, chartConfig);
+    }
+
+    // Socket event handlers
+    socket.on('connect', () => {
+        console.log('Connected to results system');
+        initChart();
+    });
+
+    socket.on('status_update', (data) => {
+        isPollingActive = data.is_polling_active || false;
+        currentQuestion = data.current_question || '';
+        votes = data.votes || {};
+        totalVotes = data.total_votes || 0;
+        
+        if (isPollingActive && currentQuestion) {
+            showResultsInterface();
+        } else {
+            showNoPollInterface();
+        }
+    });
+
+    socket.on('poll_started', (data) => {
+        isPollingActive = true;
+        currentQuestion = data.question;
+        votes = {};
+        totalVotes = 0;
+        showResultsInterface();
+    });
+
+    socket.on('poll_ended', (data) => {
+        isPollingActive = false;
+        votes = data.votes || {};
+        totalVotes = data.total_votes || 0;
+        updateChart();
+        showPollEndedInterface();
+    });
+
+    socket.on('question_changed', (data) => {
+        isPollingActive = true;
+        currentQuestion = data.question;
+        votes = {};
+        totalVotes = 0;
+        showResultsInterface();
+    });
+
+    socket.on('vote_update', (data) => {
+        votes = data.votes || {};
+        totalVotes = data.total_votes || 0;
+        updateChart();
+    });
+
+    socket.on('all_questions_complete', () => {
+        isPollingActive = false;
+        showPollEndedInterface();
+    });
+
+    function showNoPollInterface() {
+        noPollDiv.style.display = 'block';
+        resultsSection.style.display = 'none';
+        pollEndedDiv.style.display = 'none';
+    }
+
+    function showResultsInterface() {
+        noPollDiv.style.display = 'none';
+        resultsSection.style.display = 'block';
+        pollEndedDiv.style.display = 'none';
+        
+        questionText.textContent = currentQuestion;
+        updateChart();
+    }
+
+    function showPollEndedInterface() {
+        noPollDiv.style.display = 'none';
+        resultsSection.style.display = 'block';
+        pollEndedDiv.style.display = 'block';
+        
+        questionText.textContent = currentQuestion;
+        updateChart();
+    }
+
+    function updateChart() {
+        if (!chart) return;
+        
+        // Prepare data for chart
+        const chartData = [];
+        const chartLabels = [];
+        
+        // Convert votes object to chart data
+        Object.keys(votes).forEach(key => {
+            if (key !== 'total_votes' && typeof votes[key] === 'number' && votes[key] > 0) {
+                chartLabels.push(key);
+                chartData.push(votes[key]);
+            }
+        });
+        
+        // Sort by vote count (descending)
+        const sortedData = chartLabels.map((label, index) => ({
+            label: label,
+            votes: chartData[index]
+        })).sort((a, b) => b.votes - a.votes);
+        
+        // Update chart
+        chart.data.labels = sortedData.map(item => item.label);
+        chart.data.datasets[0].data = sortedData.map(item => item.votes);
+        
+        // Update colors based on position
+        chart.data.datasets[0].backgroundColor = sortedData.map((item, index) => {
+            if (index === 0 && item.votes > 0) return 'rgba(255, 193, 7, 0.8)'; // Gold for winner
+            if (index === 1 && item.votes > 0) return 'rgba(192, 192, 192, 0.8)'; // Silver for second
+            if (index === 2 && item.votes > 0) return 'rgba(205, 127, 50, 0.8)'; // Bronze for third
+            return 'rgba(76, 175, 80, 0.8)'; // Green for others
+        });
+        
+        chart.update();
+        
+        // Update total votes display
+        totalVotesSpan.textContent = totalVotes;
+    }
+
+    // Initialize
+    showNoPollInterface();
+</script>
+{% endblock %}
+
