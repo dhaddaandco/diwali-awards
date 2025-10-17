@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Diwali Awards - Host Controls{% endblock %}
+{% block title %}DCO Awards 2025 - Host Controls{% endblock %}
 
 {% block content %}
 <div class="card">
-    <h2>🪔 Diwali Host Controls</h2>
-    <p>Light up the celebration! Manage the live polling session and control the flow of Diwali awards</p>
+    <h2>🎮 DCO Host Controls</h2>
+    <p>Manage the live polling session and control the flow of DCO Awards 2025</p>
     
     <div id="status" class="status inactive">
         <span id="status-text">No active poll</span>
@@ -17,7 +17,7 @@
 </div>
 
 <div class="card">
-    <h3>🪔 Diwali Poll Controls</h3>
+    <h3>🎮 DCO Poll Controls</h3>
     <div style="text-align: center; margin: 20px 0;">
         <button id="start-poll" class="btn">Start Current Poll</button>
         <button id="end-poll" class="btn btn-danger" style="display: none;">End Poll</button>
@@ -30,7 +30,7 @@
 </div>
 
 <div class="card">
-    <h3>🪔 Diwali Award Categories ({{ awards|length }} total)</h3>
+    <h3>🏆 DCO Award Categories ({{ awards|length }} total)</h3>
     <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 15px;">
         {% for award in awards %}
         <div class="award-item" data-index="{{ loop.index0 }}" style="padding: 10px; margin: 5px 0; background: rgba(255, 255, 255, 0.7); border-radius: 5px; cursor: pointer; transition: all 0.3s ease; {% if loop.index0 == 0 %}border-left: 4px solid #4CAF50; background: rgba(76, 175, 80, 0.1);{% endif %}">
