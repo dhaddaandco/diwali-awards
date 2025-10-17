@@ -237,6 +237,23 @@
         }
     </style>
     {% block extra_css %}{% endblock %}
+    
+    <script>
+        function toggleAdmin() {
+            const adminSection = document.getElementById('admin-section');
+            const button = event.target;
+            
+            if (adminSection.style.display === 'none') {
+                adminSection.style.display = 'block';
+                button.textContent = '🔧 Hide Admin';
+                button.style.background = '#e74c3c';
+            } else {
+                adminSection.style.display = 'none';
+                button.textContent = '🔧 Admin Access';
+                button.style.background = '#666';
+            }
+        }
+    </script>
 </head>
 <body>
     <div class="container">

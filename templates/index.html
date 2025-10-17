@@ -4,13 +4,23 @@
 
 {% block content %}
 <div class="card">
-    <h2>Welcome to DCO Awards 2025 Live Polling! 🎉</h2>
-    <p>Join the fun and vote for your favorite team members in exciting award categories!</p>
+    <h2>Welcome to DCO Awards 2025! 🎉</h2>
+    <p>Cast your vote for your favorite team members in exciting award categories!</p>
     
     <div style="text-align: center; margin: 30px 0;">
-        <a href="/admin" class="btn" style="font-size: 1.2em; padding: 15px 30px;">🎮 Host Controls</a>
         <a href="/vote" class="btn" style="font-size: 1.2em; padding: 15px 30px;">🗳️ Cast Your Vote</a>
-        <a href="/results" class="btn" style="font-size: 1.2em; padding: 15px 30px;">📊 Live Results</a>
+    </div>
+    
+    <!-- Admin-only section (hidden by default) -->
+    <div id="admin-section" style="display: none; text-align: center; margin: 30px 0; padding: 20px; background: rgba(76, 175, 80, 0.1); border-radius: 10px;">
+        <h3 style="color: #2d5a2d; margin-bottom: 15px;">Admin Controls</h3>
+        <a href="/admin" class="btn" style="font-size: 1.1em; padding: 12px 25px; margin: 5px;">🎮 Host Controls</a>
+        <a href="/results" class="btn" style="font-size: 1.1em; padding: 12px 25px; margin: 5px;">📊 Live Results</a>
+    </div>
+    
+    <!-- Admin access button -->
+    <div style="text-align: center; margin: 20px 0;">
+        <button onclick="toggleAdmin()" class="btn" style="background: #666; font-size: 0.9em; padding: 8px 15px;">🔧 Admin Access</button>
     </div>
 </div>
 
