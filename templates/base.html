@@ -244,9 +244,15 @@
             const button = event.target;
             
             if (adminSection.style.display === 'none') {
-                adminSection.style.display = 'block';
-                button.textContent = '🔧 Hide Admin';
-                button.style.background = '#e74c3c';
+                // Show password prompt
+                const password = prompt('Enter admin password:');
+                if (password === '95875001') {
+                    adminSection.style.display = 'block';
+                    button.textContent = '🔧 Hide Admin';
+                    button.style.background = '#e74c3c';
+                } else if (password !== null) {
+                    alert('Incorrect password. Access denied.');
+                }
             } else {
                 adminSection.style.display = 'none';
                 button.textContent = '🔧 Admin Access';
