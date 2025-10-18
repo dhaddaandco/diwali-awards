@@ -98,9 +98,6 @@ def vote():
     current_options = award_options.get(current_award, []) if question_index < len(awards) else []
     return render_template('vote.html', current_award=current_award, current_options=current_options)
 
-@app.route('/results')
-def results():
-    return render_template('results.html')
 
 @socketio.on('connect')
 def handle_connect():

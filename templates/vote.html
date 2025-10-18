@@ -18,6 +18,16 @@
             <span id="question-text">Loading question...</span>
         </div>
         
+        <!-- Timer Section -->
+        <div id="timer-section" style="text-align: center; margin: 20px 0;">
+            <div id="timer-display" style="font-size: 2em; font-weight: bold; color: #4CAF50; margin-bottom: 10px;">
+                30
+            </div>
+            <div id="timer-bar" style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; margin: 0 auto;">
+                <div id="timer-progress" style="width: 100%; height: 100%; background: linear-gradient(90deg, #4CAF50 0%, #ff4444 100%); transition: width 1s linear;"></div>
+            </div>
+        </div>
+        
         <div class="vote-options" id="vote-options">
             <!-- Vote options will be populated dynamically -->
         </div>
@@ -25,39 +35,22 @@
         <div id="vote-status" style="text-align: center; margin: 20px 0; font-weight: bold; color: #4CAF50;">
             <!-- Vote status will be shown here -->
         </div>
+        
+        <div id="submit-section" style="text-align: center; margin: 20px 0;">
+            <button id="submit-vote" class="btn" style="font-size: 1.2em; padding: 15px 30px; display: none; background: #ff6b6b;">
+                🗳️ Submit Vote
+            </button>
+        </div>
     </div>
     
     <div id="poll-ended" class="loading" style="display: none;">
         <h3>Poll Ended</h3>
         <p>Thank you for voting! The results are being calculated.</p>
-        <a href="/results" class="btn">View Results</a>
-    </div>
-</div>
-
-<div class="card">
-    <h3>How to Vote:</h3>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
-        <div style="text-align: center; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
-            <div style="font-size: 1.5em; margin-bottom: 8px;">1️⃣</div>
-            <h4>Wait for Poll</h4>
-            <p>Wait for the host to start the voting session</p>
-        </div>
-        <div style="text-align: center; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
-            <div style="font-size: 1.5em; margin-bottom: 8px;">2️⃣</div>
-            <h4>Choose Your Vote</h4>
-            <p>Click on your favorite team member's name</p>
-        </div>
-        <div style="text-align: center; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
-            <div style="font-size: 1.5em; margin-bottom: 8px;">3️⃣</div>
-            <h4>Change Your Mind</h4>
-            <p>You can change your vote anytime before the poll ends</p>
-        </div>
     </div>
 </div>
 
 <div class="card">
     <div class="navigation">
-        <a href="/results" target="_blank">View Live Results</a>
         <a href="/admin" target="_blank">Host Controls</a>
         <a href="/">Back to Home</a>
     </div>
@@ -81,6 +74,10 @@
 
     // Current voting options (will be updated from server)
     let currentOptions = [];
+    let timerInterval = null;
+    let timeLeft = 30;
+    let selectedOption = null;
+    let hasVoted = false;
 
     // Socket event handlers
     socket.on('connect', () => {
@@ -135,11 +132,19 @@
         votingSection.style.display = 'block';
         pollEndedDiv.style.display = 'none';
         
+        // Reset voting state
+        selectedOption = null;
+        hasVoted = false;
+        timeLeft = 30;
+        
         // Update question
         questionText.textContent = currentQuestion;
         
         // Generate vote options
         generateVoteOptions();
+        
+        // Start timer
+        startTimer();
         
         // Update vote status
         updateVoteStatus();
@@ -162,12 +167,12 @@
                 optionDiv.textContent = option;
                 optionDiv.dataset.member = option;
                 
-                if (currentVote === option) {
+                if (selectedOption === option) {
                     optionDiv.classList.add('selected');
                 }
                 
                 optionDiv.addEventListener('click', () => {
-                    voteForMember(option);
+                    selectOption(option);
                 });
                 
                 voteOptions.appendChild(optionDiv);
@@ -178,35 +183,125 @@
         }
     }
 
-    function voteForMember(member) {
-        if (!isPollingActive) return;
+    function selectOption(option) {
+        if (hasVoted || !isPollingActive) return;
         
         // Update UI
-        document.querySelectorAll('.vote-option').forEach(option => {
-            option.classList.remove('selected');
+        document.querySelectorAll('.vote-option').forEach(opt => {
+            opt.classList.remove('selected');
         });
         
-        const selectedOption = document.querySelector(`[data-member="${member}"]`);
-        if (selectedOption) {
-            selectedOption.classList.add('selected');
+        const selectedOptionDiv = document.querySelector(`[data-member="${option}"]`);
+        if (selectedOptionDiv) {
+            selectedOptionDiv.classList.add('selected');
         }
         
-        // Send vote to server
-        socket.emit('vote', { choice: member });
-        currentVote = member;
-        
+        selectedOption = option;
         updateVoteStatus();
+        
+        // Show submit button
+        document.getElementById('submit-vote').style.display = 'inline-block';
+    }
+    
+    function startTimer() {
+        // Clear any existing timer
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        
+        timeLeft = 30;
+        updateTimerDisplay();
+        
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateTimerDisplay();
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                // Auto-submit if user has selected an option
+                if (selectedOption && !hasVoted) {
+                    submitVote();
+                } else {
+                    // Time's up, disable voting
+                    disableVoting();
+                }
+            }
+        }, 1000);
+    }
+    
+    function updateTimerDisplay() {
+        const timerDisplay = document.getElementById('timer-display');
+        const timerProgress = document.getElementById('timer-progress');
+        
+        timerDisplay.textContent = timeLeft;
+        
+        // Update progress bar
+        const progress = (timeLeft / 30) * 100;
+        timerProgress.style.width = progress + '%';
+        
+        // Change color as time runs out
+        if (timeLeft <= 10) {
+            timerDisplay.style.color = '#ff4444';
+            timerProgress.style.background = '#ff4444';
+        } else if (timeLeft <= 20) {
+            timerDisplay.style.color = '#ff8800';
+            timerProgress.style.background = 'linear-gradient(90deg, #ff8800 0%, #ff4444 100%)';
+        } else {
+            timerDisplay.style.color = '#4CAF50';
+            timerProgress.style.background = 'linear-gradient(90deg, #4CAF50 0%, #ff4444 100%)';
+        }
+    }
+    
+    function submitVote() {
+        if (!selectedOption || hasVoted || !isPollingActive) return;
+        
+        // Send vote to server
+        socket.emit('vote', { choice: selectedOption });
+        hasVoted = true;
+        currentVote = selectedOption;
+        
+        // Update UI
+        document.getElementById('submit-vote').style.display = 'none';
+        updateVoteStatus();
+        
+        // Clear timer
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+    }
+    
+    function disableVoting() {
+        // Disable all vote options
+        document.querySelectorAll('.vote-option').forEach(option => {
+            option.style.opacity = '0.5';
+            option.style.pointerEvents = 'none';
+        });
+        
+        // Hide submit button
+        document.getElementById('submit-vote').style.display = 'none';
+        
+        // Update status
+        voteStatus.textContent = 'Time\'s up! Voting has ended.';
+        voteStatus.style.color = '#ff4444';
     }
 
     function updateVoteStatus() {
-        if (currentVote) {
+        if (hasVoted && currentVote) {
             voteStatus.textContent = `✅ You voted for: ${currentVote}`;
             voteStatus.style.color = '#4CAF50';
+        } else if (selectedOption) {
+            voteStatus.textContent = `Selected: ${selectedOption} - Click Submit to vote`;
+            voteStatus.style.color = '#ff8800';
         } else {
-            voteStatus.textContent = 'Click on a name to cast your vote';
+            voteStatus.textContent = 'Click on a name to select your vote';
             voteStatus.style.color = '#666';
         }
     }
+    
+    // Add submit button event listener
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('submit-vote').addEventListener('click', submitVote);
+    });
 
     // Initialize
     showWaitingInterface();
