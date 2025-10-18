@@ -74,6 +74,7 @@
     let isPollingActive = false;
     
     // Award options and intros from server
+    const awards = {{ awards | tojson }};
     const awardOptions = {{ award_options | tojson }};
     const awardIntros = {{ award_intros | tojson }};
 
@@ -272,6 +273,12 @@
 
     // Initialize UI
     updateUI();
+    
+    // Debug: Check if we have the required data
+    console.log('Awards array:', awards);
+    console.log('Award options:', awardOptions);
+    console.log('Current question index:', currentQuestionIndex);
+    console.log('Is polling active:', isPollingActive);
 </script>
 {% endblock %}
 
