@@ -79,13 +79,8 @@
     const voteOptions = document.getElementById('vote-options');
     const voteStatus = document.getElementById('vote-status');
 
-    // Sample team members - you can customize this list
-    const teamMembers = [
-        "Alex Johnson", "Sarah Chen", "Mike Rodriguez", "Emily Davis", "David Kim",
-        "Lisa Wang", "James Wilson", "Maria Garcia", "Tom Brown", "Anna Taylor",
-        "Chris Lee", "Jessica White", "Ryan Miller", "Amanda Clark", "Kevin Zhang",
-        "Rachel Green", "Daniel Park", "Sophie Martin", "Mark Thompson", "Emma Wilson"
-    ];
+    // Current voting options (will be updated from server)
+    let currentOptions = [];
 
     // Socket event handlers
     socket.on('connect', () => {
@@ -106,6 +101,7 @@
     socket.on('poll_started', (data) => {
         isPollingActive = true;
         currentQuestion = data.question;
+        currentOptions = data.options || [];
         showVotingInterface();
     });
 
@@ -117,6 +113,7 @@
     socket.on('question_changed', (data) => {
         isPollingActive = true;
         currentQuestion = data.question;
+        currentOptions = data.options || [];
         currentVote = null;
         showVotingInterface();
     });
@@ -156,29 +153,28 @@
     function generateVoteOptions() {
         voteOptions.innerHTML = '';
         
-        // Shuffle team members for variety
-        const shuffledMembers = [...teamMembers].sort(() => Math.random() - 0.5);
-        
-        // Show 4-6 random team members as options
-        const numOptions = Math.min(6, Math.max(4, Math.floor(Math.random() * 3) + 4));
-        const selectedMembers = shuffledMembers.slice(0, numOptions);
-        
-        selectedMembers.forEach(member => {
-            const optionDiv = document.createElement('div');
-            optionDiv.className = 'vote-option';
-            optionDiv.textContent = member;
-            optionDiv.dataset.member = member;
-            
-            if (currentVote === member) {
-                optionDiv.classList.add('selected');
-            }
-            
-            optionDiv.addEventListener('click', () => {
-                voteForMember(member);
+        // Use the specific options for the current award
+        if (currentOptions && currentOptions.length > 0) {
+            currentOptions.forEach(option => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'vote-option';
+                optionDiv.textContent = option;
+                optionDiv.dataset.member = option;
+                
+                if (currentVote === option) {
+                    optionDiv.classList.add('selected');
+                }
+                
+                optionDiv.addEventListener('click', () => {
+                    voteForMember(option);
+                });
+                
+                voteOptions.appendChild(optionDiv);
             });
-            
-            voteOptions.appendChild(optionDiv);
-        });
+        } else {
+            // Fallback if no options are provided
+            voteOptions.innerHTML = '<p>No voting options available for this question.</p>';
+        }
     }
 
     function voteForMember(member) {

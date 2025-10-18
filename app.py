@@ -14,39 +14,75 @@ votes = {}
 is_polling_active = False
 total_votes = 0
 
-# 30 Fun Award Categories
+# 31 DCO Awards with 4 options each
 awards = [
-    "Most Likely to Survive a Zombie Apocalypse",
-    "Best Coffee Addiction",
-    "Most Creative Excuse for Being Late",
-    "Best Zoom Background",
-    "Most Likely to Win a Karaoke Contest",
-    "Best Desk Decoration",
-    "Most Likely to Bring Snacks to Every Meeting",
-    "Best Email Signature",
-    "Most Likely to Remember Everyone's Birthday",
-    "Best PowerPoint Animation Skills",
-    "Most Likely to Have a Pet at Work",
-    "Best Meme Creator",
-    "Most Likely to Win a Dance-Off",
-    "Best Office Plant Parent",
-    "Most Likely to Have a Secret Talent",
-    "Best Meeting Icebreaker",
-    "Most Likely to Win a Costume Contest",
-    "Best Slack Reaction Game",
-    "Most Likely to Have a Side Hustle",
-    "Best Office Joke Teller",
-    "Most Likely to Win a Trivia Night",
-    "Best Work-From-Home Setup",
-    "Most Likely to Have a Collection",
-    "Best Team Spirit",
-    "Most Likely to Win a Cooking Contest",
-    "Best Office Playlist Curator",
-    "Most Likely to Have a Catchphrase",
-    "Best Problem Solver",
-    "Most Likely to Win a Scavenger Hunt",
-    "Best Team Player"
+    "DCO's Bhukhad",
+    "DCO's Late Latif", 
+    "DCO's Bheja Fry",
+    "DCO's Chapad Chapad",
+    "DCO's Goli Master",
+    "DCO's Narad Muni",
+    "DCO's Bindas Insaan",
+    "DCO's Most Sanskari",
+    "DCO's Kamchor",
+    "DCO's Chupa Rustom",
+    "DCO's Ladaku",
+    "DCO's MF Husain",
+    "DCO's Dancer",
+    "DCO's Gyani",
+    "DCO's Influencer",
+    "DCO's Style Icon",
+    "DCO's Scariest Manager",
+    "DCO's Chill Manager",
+    "DCO's Star (All-Rounder)",
+    "DCO's Chai Lover",
+    "DCO's Sabka Dost, Kaam Ke Time Ghost",
+    "DCO's Phone Pe Hi Busy",
+    "DCO's 2-Min Break = 2-Hour Walk",
+    "DCO's Deadline Warrior",
+    "DCO's Tech Guru",
+    "DCO's Fitness Freak",
+    "DCO's Drama Queen/King",
+    "DCO's Gumnaam",
+    "DCO's Workholic",
+    "DCO's Most Punctual",
+    "DCO's Strongest Pillar"
 ]
+
+# Award options for each category
+award_options = {
+    "DCO's Bhukhad": ["Kunal Rajwani", "Sudhakar Kumar", "Romil Nagori", "Arihant Jain"],
+    "DCO's Late Latif": ["Divyanshu Jain", "Kunal Rajwani", "Adish Jain", "Gargi paliwal"],
+    "DCO's Bheja Fry": ["Aryan Jain", "Harshit Jain", "Adish Jain", "Priya Sharma"],
+    "DCO's Chapad Chapad": ["Mahak Gandhi", "Megha Toshniwal", "Harshita Solanki", "Keerti Sharma"],
+    "DCO's Goli Master": ["Divya Gupta", "Somil", "Mudit Jain", "Romil Nagori"],
+    "DCO's Narad Muni": ["Sneha Mishra", "Deena Arora", "Naresh Sharma", "Keerti Sharma"],
+    "DCO's Bindas Insaan": ["Somil", "Shefali Jain", "Ritika Agarwal", "Nirali Chhabra"],
+    "DCO's Most Sanskari": ["Diksha Hirani", "Prachi Gupta", "Ayush Jain", "Nirali Chhabra"],
+    "DCO's Kamchor": ["Sudhakar Kumar", "Virendra kumar sharma", "Adish Jain", "Arihant Jain"],
+    "DCO's Chupa Rustom": ["Gargi Gupta", "Om Prakash", "Arun Maur", "Naresh Sharma"],
+    "DCO's Ladaku": ["Kunal Rajwani", "Divyanshu Jain", "Romil Nagori", "Gargi paliwal"],
+    "DCO's MF Husain": ["Somya Jain", "Shreyansh Jain", "Harshita Solanki", "Ananya Kayal"],
+    "DCO's Dancer": ["Somil", "Rahul", "Harshita Solanki", "Ananya Kayal"],
+    "DCO's Gyani": ["Hardik Lodha", "Divya Gupta", "Ananya Jain", "Tushar Singh Sisodiya"],
+    "DCO's Influencer": ["Sanyam Saraf", "Mahak Gandhi", "Adish Jain", "Adish Jain"],
+    "DCO's Style Icon": ["Shreyansh Jain", "Pranjul Saini", "Ananya Jain", "Nirali Chhabra"],
+    "DCO's Scariest Manager": ["Shuchi Sethi", "Safal Sethi", "Gargi paliwal", "Romil Nagori"],
+    "DCO's Chill Manager": ["Shefali Jain", "Dheera", "Mudit Jain", "Sourabh Chhipa"],
+    "DCO's Star (All-Rounder)": ["Kashvi Katiyar", "Somya Jain", "Ananya Kayal", "Tushar Singh Sisodiya"],
+    "DCO's Chai Lover": ["Safal Sethi", "Rajesh Meena", "Gargi paliwal", "Romil Nagori"],
+    "DCO's Sabka Dost, Kaam Ke Time Ghost": ["Priyanshu", "Somil", "Ananya Jain", "Raghav Maheshwari"],
+    "DCO's Phone Pe Hi Busy": ["Yash Dhadda", "Sourabh Chhipa", "Ananya Jain", "Romil Nagori"],
+    "DCO's 2-Min Break = 2-Hour Walk": ["Khushboo Sangtani", "Deena Arora", "Adish Jain", "Keerti Sharma"],
+    "DCO's Deadline Warrior": ["Sourabh Chhipa", "Shradha Sareen", "Yash Vijay", "Neha Jain"],
+    "DCO's Tech Guru": ["Somya Jain", "Sanyam Saraf", "Yash Vijay", "Mudit Jain"],
+    "DCO's Fitness Freak": ["Shreyansh Jain", "Virendra kumar sharma", "Aman Baid", "Sanyam Saraf"],
+    "DCO's Drama Queen/King": ["Kajal", "Megha Toshniwal", "Ananya Kayal", "Arihant Jain"],
+    "DCO's Gumnaam": ["Suresh Das Vaishnav", "Gunin Janyani", "Arun Maur", "Chanchal Maheshwari"],
+    "DCO's Workholic": ["Yash Kumawat", "Ayushi Bagrecha", "Harshita Solanki", "Neha Jain"],
+    "DCO's Most Punctual": ["Gargi Gupta", "Shresth Mittal", "Yash Vijay", "Mudit Jain"],
+    "DCO's Strongest Pillar": ["Princy Dhadda", "Yash Dhadda", "Mudit Jain", "Arvind Dhadda"]
+}
 
 @app.route('/')
 def index():
@@ -54,11 +90,13 @@ def index():
 
 @app.route('/admin')
 def admin():
-    return render_template('admin.html', awards=awards)
+    return render_template('admin.html', awards=awards, award_options=award_options)
 
 @app.route('/vote')
 def vote():
-    return render_template('vote.html')
+    current_award = awards[question_index] if question_index < len(awards) else "No active poll"
+    current_options = award_options.get(current_award, []) if question_index < len(awards) else []
+    return render_template('vote.html', current_award=current_award, current_options=current_options)
 
 @app.route('/results')
 def results():
@@ -82,12 +120,14 @@ def handle_start_poll(data):
     question_index = data.get('question_index', 0)
     if 0 <= question_index < len(awards):
         current_question = awards[question_index]
+        current_options = award_options.get(current_question, [])
         votes = {}
         is_polling_active = True
         total_votes = 0
         
         emit('poll_started', {
             'question': current_question,
+            'options': current_options,
             'question_index': question_index
         }, broadcast=True)
         
@@ -112,12 +152,14 @@ def handle_next_question():
     question_index += 1
     if question_index < len(awards):
         current_question = awards[question_index]
+        current_options = award_options.get(current_question, [])
         votes = {}
         is_polling_active = True
         total_votes = 0
         
         emit('question_changed', {
             'question': current_question,
+            'options': current_options,
             'question_index': question_index
         }, broadcast=True)
         
