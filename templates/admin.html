@@ -126,24 +126,28 @@
         
         updateUI();
         updateVoteCount(data.total_votes || 0);
+        updateResults(data.votes || {});
     });
 
     socket.on('poll_started', (data) => {
         isPollingActive = true;
         currentQuestionIndex = data.question_index;
         updateUI();
+        updateResults({}); // Clear results for new poll
     });
 
     socket.on('poll_ended', (data) => {
         isPollingActive = false;
         updateUI();
         updateVoteCount(data.total_votes || 0);
+        updateResults(data.votes || {});
     });
 
     socket.on('question_changed', (data) => {
         currentQuestionIndex = data.question_index;
         isPollingActive = true;
         updateUI();
+        updateResults({}); // Clear results for new question
     });
 
     socket.on('vote_update', (data) => {
@@ -177,6 +181,9 @@
             startPollBtn.style.display = 'none';
             endPollBtn.style.display = 'inline-block';
             nextQuestionBtn.style.display = 'inline-block';
+            
+            // Show results card when poll is active
+            resultsCard.style.display = 'block';
         } else {
             statusDiv.className = 'status inactive';
             statusText.textContent = 'No active poll';
@@ -197,60 +204,68 @@
     }
     
     function updateResults(votes) {
-        if (isPollingActive && Object.keys(votes).length > 0) {
-            // Show results card
+        console.log('updateResults called with votes:', votes);
+        
+        // Always show results card when there are votes or when poll is active
+        if (Object.keys(votes).length > 0 || isPollingActive) {
             resultsCard.style.display = 'block';
-            noVotesDiv.style.display = 'none';
-            voteBreakdownDiv.style.display = 'block';
             
-            // Clear previous results
-            voteBreakdownDiv.innerHTML = '';
-            
-            // Get current award options
-            const currentAward = awards[currentQuestionIndex];
-            const currentOptions = awardOptions[currentAward] || [];
-            
-            // Create results display
-            currentOptions.forEach(option => {
-                const voteCount = votes[option] || 0;
-                const percentage = Object.values(votes).reduce((a, b) => a + b, 0) > 0 
-                    ? Math.round((voteCount / Object.values(votes).reduce((a, b) => a + b, 0)) * 100) 
-                    : 0;
+            if (Object.keys(votes).length > 0) {
+                noVotesDiv.style.display = 'none';
+                voteBreakdownDiv.style.display = 'block';
                 
-                const resultItem = document.createElement('div');
-                resultItem.style.cssText = `
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 15px;
-                    margin: 10px 0;
-                    background: rgba(255, 255, 255, 0.8);
-                    border-radius: 8px;
-                    border-left: 4px solid #4CAF50;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                `;
+                // Clear previous results
+                voteBreakdownDiv.innerHTML = '';
                 
-                resultItem.innerHTML = `
-                    <div style="flex: 1;">
-                        <div style="font-weight: bold; color: #2d5a2d; margin-bottom: 5px;">${option}</div>
-                        <div style="font-size: 0.9em; color: #666;">${voteCount} vote${voteCount !== 1 ? 's' : ''} (${percentage}%)</div>
-                    </div>
-                    <div style="width: 100px; height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden; margin-left: 15px;">
-                        <div style="width: ${percentage}%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); transition: width 0.3s ease;"></div>
-                    </div>
-                `;
+                // Get current award options
+                const currentAward = awards[currentQuestionIndex];
+                const currentOptions = awardOptions[currentAward] || [];
                 
-                voteBreakdownDiv.appendChild(resultItem);
-            });
-        } else {
-            // Hide results card or show no votes message
-            if (isPollingActive) {
-                resultsCard.style.display = 'block';
+                console.log('Current award:', currentAward);
+                console.log('Current options:', currentOptions);
+                console.log('Votes received:', votes);
+                
+                // Create results display
+                currentOptions.forEach(option => {
+                    const voteCount = votes[option] || 0;
+                    const totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
+                    const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+                    
+                    console.log(`Option: ${option}, Votes: ${voteCount}, Percentage: ${percentage}%`);
+                    
+                    const resultItem = document.createElement('div');
+                    resultItem.style.cssText = `
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 15px;
+                        margin: 10px 0;
+                        background: rgba(255, 255, 255, 0.8);
+                        border-radius: 8px;
+                        border-left: 4px solid #4CAF50;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    `;
+                    
+                    resultItem.innerHTML = `
+                        <div style="flex: 1;">
+                            <div style="font-weight: bold; color: #2d5a2d; margin-bottom: 5px;">${option}</div>
+                            <div style="font-size: 0.9em; color: #666;">${voteCount} vote${voteCount !== 1 ? 's' : ''} (${percentage}%)</div>
+                        </div>
+                        <div style="width: 100px; height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden; margin-left: 15px;">
+                            <div style="width: ${percentage}%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); transition: width 0.3s ease;"></div>
+                        </div>
+                    `;
+                    
+                    voteBreakdownDiv.appendChild(resultItem);
+                });
+            } else {
+                // Show no votes message
                 noVotesDiv.style.display = 'block';
                 voteBreakdownDiv.style.display = 'none';
-            } else {
-                resultsCard.style.display = 'none';
             }
+        } else {
+            // Hide results card when no poll and no votes
+            resultsCard.style.display = 'none';
         }
     }
 
