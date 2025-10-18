@@ -171,7 +171,12 @@ def handle_connect():
     current_options = award_options.get(current_question, []) if current_question else []
     current_intro = award_intros.get(current_question, '') if current_question else ''
     # Create a clean votes object for display (without voter IDs)
-    display_votes = {k: v for k, v in votes.items() if not k.startswith('socket_')}
+    display_votes = {}
+    for k, v in votes.items():
+        # Skip if this is a voter ID (not a choice name)
+        if k not in award_options.get(current_question, []):
+            continue
+        display_votes[k] = v
     emit('status_update', {
         'current_question': current_question,
         'current_options': current_options,
@@ -210,7 +215,12 @@ def handle_end_poll():
     is_polling_active = False
     
     # Create a clean votes object for display (without voter IDs)
-    display_votes = {k: v for k, v in votes.items() if not k.startswith('socket_')}
+    display_votes = {}
+    for k, v in votes.items():
+        # Skip if this is a voter ID (not a choice name)
+        if k not in award_options.get(current_question, []):
+            continue
+        display_votes[k] = v
     
     emit('poll_ended', {
         'votes': display_votes,
@@ -270,15 +280,25 @@ def handle_vote(data):
         total_votes += 1
         
         # Create a clean votes object for display (without voter IDs)
-        display_votes = {k: v for k, v in votes.items() if not k.startswith('socket_')}
+        # Voter IDs are the socket IDs, so we need to filter them out
+        # Keep only the vote counts for each choice
+        display_votes = {}
+        for k, v in votes.items():
+            # Skip if this is a voter ID (not a choice name)
+            if k not in award_options.get(current_question, []):
+                continue
+            display_votes[k] = v
+        
+        print(f'Vote received: {choice}')
+        print(f'Votes object: {votes}')
+        print(f'Display votes: {display_votes}')
+        print(f'Total votes: {total_votes}')
         
         emit('vote_update', {
             'votes': display_votes,
             'total_votes': total_votes,
             'voter_choice': choice
         }, broadcast=True)
-        
-        print(f'Vote received: {choice}')
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -295,7 +315,12 @@ def handle_disconnect():
         total_votes = max(0, total_votes - 1)
         
         # Create a clean votes object for display (without voter IDs)
-        display_votes = {k: v for k, v in votes.items() if not k.startswith('socket_')}
+        display_votes = {}
+        for k, v in votes.items():
+            # Skip if this is a voter ID (not a choice name)
+            if k not in award_options.get(current_question, []):
+                continue
+            display_votes[k] = v
         
         emit('vote_update', {
             'votes': display_votes,
