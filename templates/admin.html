@@ -29,6 +29,18 @@
     </div>
 </div>
 
+<div class="card" id="results-card" style="display: none;">
+    <h3>📊 Live Results</h3>
+    <div id="results-display">
+        <div id="no-votes" style="text-align: center; color: #666; padding: 20px;">
+            No votes yet. Results will appear here as people vote.
+        </div>
+        <div id="vote-breakdown" style="display: none;">
+            <!-- Vote breakdown will be populated here -->
+        </div>
+    </div>
+</div>
+
 <div class="card">
     <h3>🏆 DCO Award Categories ({{ awards|length }} total)</h3>
     <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 15px;">
@@ -57,6 +69,9 @@
     const socket = io();
     let currentQuestionIndex = 0;
     let isPollingActive = false;
+    
+    // Award options from server
+    const awardOptions = {{ award_options | tojson }};
 
     // Award items for selection
     const awardItems = document.querySelectorAll('.award-item');
@@ -67,6 +82,11 @@
     const currentQuestionDiv = document.getElementById('current-question');
     const questionText = document.getElementById('question-text');
     const voteCount = document.getElementById('vote-count');
+    
+    // Results elements
+    const resultsCard = document.getElementById('results-card');
+    const noVotesDiv = document.getElementById('no-votes');
+    const voteBreakdownDiv = document.getElementById('vote-breakdown');
     
     // Control buttons
     const startPollBtn = document.getElementById('start-poll');
@@ -124,6 +144,7 @@
 
     socket.on('vote_update', (data) => {
         updateVoteCount(data.total_votes || 0);
+        updateResults(data.votes || {});
     });
 
     socket.on('all_questions_complete', () => {
@@ -169,6 +190,64 @@
 
     function updateVoteCount(count) {
         voteCount.textContent = `Total Votes: ${count}`;
+    }
+    
+    function updateResults(votes) {
+        if (isPollingActive && Object.keys(votes).length > 0) {
+            // Show results card
+            resultsCard.style.display = 'block';
+            noVotesDiv.style.display = 'none';
+            voteBreakdownDiv.style.display = 'block';
+            
+            // Clear previous results
+            voteBreakdownDiv.innerHTML = '';
+            
+            // Get current award options
+            const currentAward = awards[currentQuestionIndex];
+            const currentOptions = awardOptions[currentAward] || [];
+            
+            // Create results display
+            currentOptions.forEach(option => {
+                const voteCount = votes[option] || 0;
+                const percentage = Object.values(votes).reduce((a, b) => a + b, 0) > 0 
+                    ? Math.round((voteCount / Object.values(votes).reduce((a, b) => a + b, 0)) * 100) 
+                    : 0;
+                
+                const resultItem = document.createElement('div');
+                resultItem.style.cssText = `
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 15px;
+                    margin: 10px 0;
+                    background: rgba(255, 255, 255, 0.8);
+                    border-radius: 8px;
+                    border-left: 4px solid #4CAF50;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                `;
+                
+                resultItem.innerHTML = `
+                    <div style="flex: 1;">
+                        <div style="font-weight: bold; color: #2d5a2d; margin-bottom: 5px;">${option}</div>
+                        <div style="font-size: 0.9em; color: #666;">${voteCount} vote${voteCount !== 1 ? 's' : ''} (${percentage}%)</div>
+                    </div>
+                    <div style="width: 100px; height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden; margin-left: 15px;">
+                        <div style="width: ${percentage}%; height: 100%; background: linear-gradient(90deg, #4CAF50, #45a049); transition: width 0.3s ease;"></div>
+                    </div>
+                `;
+                
+                voteBreakdownDiv.appendChild(resultItem);
+            });
+        } else {
+            // Hide results card or show no votes message
+            if (isPollingActive) {
+                resultsCard.style.display = 'block';
+                noVotesDiv.style.display = 'block';
+                voteBreakdownDiv.style.display = 'none';
+            } else {
+                resultsCard.style.display = 'none';
+            }
+        }
     }
 
     // Initialize UI
