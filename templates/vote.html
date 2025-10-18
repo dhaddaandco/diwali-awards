@@ -190,9 +190,20 @@
                     optionDiv.classList.add('selected');
                 }
                 
-                optionDiv.addEventListener('click', () => {
-                    selectOption(option);
-                });
+                // If user has already voted, show their selection but disable interaction
+                if (hasVoted) {
+                    if (currentVote === option) {
+                        optionDiv.classList.add('voted');
+                        optionDiv.style.background = '#e8f5e8';
+                        optionDiv.style.border = '2px solid #4CAF50';
+                    } else {
+                        optionDiv.style.opacity = '0.6';
+                    }
+                } else {
+                    optionDiv.addEventListener('click', () => {
+                        selectOption(option);
+                    });
+                }
                 
                 voteOptions.appendChild(optionDiv);
             });
@@ -283,13 +294,15 @@
         document.getElementById('submit-vote').style.display = 'none';
         updateVoteStatus();
         
-        // Clear timer
-        if (timerInterval) {
-            clearInterval(timerInterval);
-        }
+        // Don't clear timer - let it continue for others
     }
     
     function disableVoting() {
+        // Clear timer when time actually runs out
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        
         // Disable all vote options
         document.querySelectorAll('.vote-option').forEach(option => {
             option.style.opacity = '0.5';
