@@ -90,6 +90,7 @@
     socket.on('status_update', (data) => {
         isPollingActive = data.is_polling_active || false;
         currentQuestion = data.current_question || '';
+        currentOptions = data.current_options || [];
         
         if (isPollingActive && currentQuestion) {
             showVotingInterface();

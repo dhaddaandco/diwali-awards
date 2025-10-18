@@ -105,12 +105,16 @@ def results():
 @socketio.on('connect')
 def handle_connect():
     print(f'Client connected: {request.sid}')
+    current_options = award_options.get(current_question, []) if current_question else []
+    # Create a clean votes object for display (without voter IDs)
+    display_votes = {k: v for k, v in votes.items() if not k.startswith('socket_')}
     emit('status_update', {
         'current_question': current_question,
+        'current_options': current_options,
         'question_index': question_index,
         'is_polling_active': is_polling_active,
         'total_votes': total_votes,
-        'votes': votes
+        'votes': display_votes
     })
 
 @socketio.on('start_poll')
@@ -138,8 +142,11 @@ def handle_end_poll():
     global is_polling_active
     is_polling_active = False
     
+    # Create a clean votes object for display (without voter IDs)
+    display_votes = {k: v for k, v in votes.items() if not k.startswith('socket_')}
+    
     emit('poll_ended', {
-        'votes': votes,
+        'votes': display_votes,
         'total_votes': total_votes
     }, broadcast=True)
     
@@ -186,14 +193,18 @@ def handle_vote(data):
                 votes[old_choice] = votes.get(old_choice, 1) - 1
                 if votes[old_choice] <= 0:
                     del votes[old_choice]
+                total_votes -= 1
         
         # Add new vote
         votes[voter_id] = choice
         votes[choice] = votes.get(choice, 0) + 1
         total_votes += 1
         
+        # Create a clean votes object for display (without voter IDs)
+        display_votes = {k: v for k, v in votes.items() if not k.startswith('socket_') and k != voter_id}
+        
         emit('vote_update', {
-            'votes': votes,
+            'votes': display_votes,
             'total_votes': total_votes,
             'voter_choice': choice
         }, broadcast=True)
@@ -214,8 +225,11 @@ def handle_disconnect():
         del votes[voter_id]
         total_votes = max(0, total_votes - 1)
         
+        # Create a clean votes object for display (without voter IDs)
+        display_votes = {k: v for k, v in votes.items() if not k.startswith('socket_')}
+        
         emit('vote_update', {
-            'votes': votes,
+            'votes': display_votes,
             'total_votes': total_votes
         }, broadcast=True)
     
