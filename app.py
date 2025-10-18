@@ -239,7 +239,7 @@ def handle_vote(data):
         total_votes += 1
         
         # Create a clean votes object for display (without voter IDs)
-        display_votes = {k: v for k, v in votes.items() if not k.startswith('socket_') and k != voter_id}
+        display_votes = {k: v for k, v in votes.items() if not k.startswith('socket_')}
         
         emit('vote_update', {
             'votes': display_votes,

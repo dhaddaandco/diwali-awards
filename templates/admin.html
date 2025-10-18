@@ -151,6 +151,7 @@
     });
 
     socket.on('vote_update', (data) => {
+        console.log('Vote update received:', data);
         updateVoteCount(data.total_votes || 0);
         updateResults(data.votes || {});
     });
