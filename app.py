@@ -49,6 +49,41 @@ awards = [
     "DCO's Strongest Pillar"
 ]
 
+# Award intro descriptions
+award_intros = {
+    "DCO's Bhukhad": "Always hungry",
+    "DCO's Late Latif": "Jo kabhi time pe nahi aata",
+    "DCO's Bheja Fry": "Asks 10 questions where 1 would do",
+    "DCO's Chapad Chapad": "Keeps the office alive with unlimited commentary",
+    "DCO's Goli Master": "Promises treats faster than you can say \"party,\" but kabhi deta nahi!",
+    "DCO's Narad Muni": "Knows every gossip before it's even gossip.",
+    "DCO's Bindas Insaan": "Cool, carefree, and never stressed — even during audits.",
+    "DCO's Most Sanskari": "DCO's Most Sanskari",
+    "DCO's Kamchor": "A master at looking busy while doing absolutely nothing.",
+    "DCO's Chupa Rustom": "Secret keeper.",
+    "DCO's Ladaku": "Always ready to debate - even with Google!",
+    "DCO's MF Husain": "Turns every whiteboard into a work of art.",
+    "DCO's Dancer": "Can groove anywhere",
+    "DCO's Gyani": "Takes time to understand",
+    "DCO's Influencer": "Office celeb — always posting stories, reels, and selfies.",
+    "DCO's Style Icon": "The one who turns the office corridor into a runway.",
+    "DCO's Scariest Manager": "A single \"Come to my cabin\" is enough to cause panic.",
+    "DCO's Chill Manager": "Coolest boss ever — strict on deadlines, soft on people.",
+    "DCO's Star (All-Rounder)": "Shines in every task.",
+    "DCO's Chai Lover": "Life, work, and conversations - all powered by chai.",
+    "DCO's Sabka Dost, Kaam Ke Time Ghost": "Social butterfly who disappears exactly when work starts.",
+    "DCO's Phone Pe Hi Busy": "Perpetually on \"important calls\" that never seem to end.",
+    "DCO's 2-Min Break = 2-Hour Walk": "Vanishes for \"just 2 mins\" and returns after sunset.",
+    "DCO's Deadline Warrior": "Works best when the deadline was yesterday.",
+    "DCO's Tech Guru": "The go-to person when nothing is working",
+    "DCO's Fitness Freak": "Hits the gym even after 10-hour workdays.",
+    "DCO's Drama Queen/King": "Turns every tiny issue into a full episode.",
+    "DCO's Gumnaam": "Jo km bolte h",
+    "DCO's Workholic": "DCO's Workholic",
+    "DCO's Most Punctual": "DCO's Most Punctual",
+    "DCO's Strongest Pillar": "DCO's Hero"
+}
+
 # Award options for each category
 award_options = {
     "DCO's Bhukhad": ["Kunal Rajwani", "Sudhakar Kumar", "Romil Nagori", "Arihant Jain"],
@@ -90,7 +125,7 @@ def index():
 
 @app.route('/admin')
 def admin():
-    return render_template('admin.html', awards=awards, award_options=award_options)
+    return render_template('admin.html', awards=awards, award_options=award_options, award_intros=award_intros)
 
 @app.route('/vote')
 def vote():
@@ -103,11 +138,13 @@ def vote():
 def handle_connect():
     print(f'Client connected: {request.sid}')
     current_options = award_options.get(current_question, []) if current_question else []
+    current_intro = award_intros.get(current_question, '') if current_question else ''
     # Create a clean votes object for display (without voter IDs)
     display_votes = {k: v for k, v in votes.items() if not k.startswith('socket_')}
     emit('status_update', {
         'current_question': current_question,
         'current_options': current_options,
+        'current_intro': current_intro,
         'question_index': question_index,
         'is_polling_active': is_polling_active,
         'total_votes': total_votes,
@@ -122,6 +159,7 @@ def handle_start_poll(data):
     if 0 <= question_index < len(awards):
         current_question = awards[question_index]
         current_options = award_options.get(current_question, [])
+        current_intro = award_intros.get(current_question, '')
         votes = {}
         is_polling_active = True
         total_votes = 0
@@ -129,6 +167,7 @@ def handle_start_poll(data):
         emit('poll_started', {
             'question': current_question,
             'options': current_options,
+            'intro': current_intro,
             'question_index': question_index
         }, broadcast=True)
         
@@ -157,6 +196,7 @@ def handle_next_question():
     if question_index < len(awards):
         current_question = awards[question_index]
         current_options = award_options.get(current_question, [])
+        current_intro = award_intros.get(current_question, '')
         votes = {}
         is_polling_active = True
         total_votes = 0
@@ -164,6 +204,7 @@ def handle_next_question():
         emit('question_changed', {
             'question': current_question,
             'options': current_options,
+            'intro': current_intro,
             'question_index': question_index
         }, broadcast=True)
         

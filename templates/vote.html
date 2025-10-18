@@ -16,6 +16,7 @@
     <div id="voting-section" style="display: none;">
         <div id="current-question" class="question-display">
             <span id="question-text">Loading question...</span>
+            <div id="question-intro" style="font-size: 0.9em; color: #666; margin-top: 8px; font-style: italic;"></div>
         </div>
         
         <!-- Timer Section -->
@@ -69,6 +70,7 @@
     const votingSection = document.getElementById('voting-section');
     const pollEndedDiv = document.getElementById('poll-ended');
     const questionText = document.getElementById('question-text');
+    const questionIntro = document.getElementById('question-intro');
     const voteOptions = document.getElementById('vote-options');
     const voteStatus = document.getElementById('vote-status');
 
@@ -89,6 +91,11 @@
         currentQuestion = data.current_question || '';
         currentOptions = data.current_options || [];
         
+        // Update intro description
+        if (data.current_intro) {
+            questionIntro.textContent = data.current_intro;
+        }
+        
         if (isPollingActive && currentQuestion) {
             showVotingInterface();
         } else {
@@ -100,6 +107,12 @@
         isPollingActive = true;
         currentQuestion = data.question;
         currentOptions = data.options || [];
+        
+        // Update intro description
+        if (data.intro) {
+            questionIntro.textContent = data.intro;
+        }
+        
         showVotingInterface();
     });
 
@@ -113,6 +126,12 @@
         currentQuestion = data.question;
         currentOptions = data.options || [];
         currentVote = null;
+        
+        // Update intro description
+        if (data.intro) {
+            questionIntro.textContent = data.intro;
+        }
+        
         showVotingInterface();
     });
 

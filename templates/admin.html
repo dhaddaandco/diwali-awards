@@ -47,7 +47,10 @@
         {% for award in awards %}
         <div class="award-item" data-index="{{ loop.index0 }}" style="padding: 10px; margin: 5px 0; background: rgba(255, 255, 255, 0.7); border-radius: 5px; cursor: pointer; transition: all 0.3s ease; {% if loop.index0 == 0 %}border-left: 4px solid #4CAF50; background: rgba(76, 175, 80, 0.1);{% endif %}">
             <strong>{{ loop.index }}.</strong> {{ award }}
-            <div style="font-size: 0.9em; color: #666; margin-top: 5px;">
+            <div style="font-size: 0.9em; color: #888; margin-top: 3px; font-style: italic;">
+                {{ award_intros.get(award, '') }}
+            </div>
+            <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
                 Options: {{ award_options.get(award, [])|join(', ') }}
             </div>
         </div>
@@ -70,8 +73,9 @@
     let currentQuestionIndex = 0;
     let isPollingActive = false;
     
-    // Award options from server
+    // Award options and intros from server
     const awardOptions = {{ award_options | tojson }};
+    const awardIntros = {{ award_intros | tojson }};
 
     // Award items for selection
     const awardItems = document.querySelectorAll('.award-item');
