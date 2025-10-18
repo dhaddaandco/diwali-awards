@@ -125,6 +125,37 @@ def index():
 
 @app.route('/admin')
 def admin():
+    password = request.args.get('password')
+    if password != '95875001':
+        return '''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>DCO Awards 2025 - Admin Access</title>
+            <style>
+                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f0f8f0; }
+                .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
+                .error { color: #e74c3c; margin: 20px 0; }
+                input { padding: 10px; margin: 10px; width: 200px; border: 1px solid #ddd; border-radius: 5px; }
+                button { padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+                button:hover { background: #45a049; }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h2>🔒 Admin Access Required</h2>
+                <p>Please enter the admin password to access host controls.</p>
+                <form method="get">
+                    <input type="password" name="password" placeholder="Enter admin password" required>
+                    <br>
+                    <button type="submit">Access Host Controls</button>
+                </form>
+                <div class="error">Incorrect password. Please try again.</div>
+                <p><a href="/">← Back to Home</a></p>
+            </div>
+        </body>
+        </html>
+        ''', 401
     return render_template('admin.html', awards=awards, award_options=award_options, award_intros=award_intros)
 
 @app.route('/vote')

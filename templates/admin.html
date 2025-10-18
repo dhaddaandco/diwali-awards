@@ -27,6 +27,17 @@
     <div style="text-align: center; margin: 20px 0;">
         <span id="vote-count">Total Votes: 0</span>
     </div>
+    
+    <!-- Timer Section for Admin -->
+    <div id="admin-timer-section" style="text-align: center; margin: 20px 0; display: none;">
+        <div id="admin-timer-display" style="font-size: 2em; font-weight: bold; color: #4CAF50; margin-bottom: 10px;">
+            30
+        </div>
+        <div id="admin-timer-bar" style="width: 100%; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; margin: 0 auto;">
+            <div id="admin-timer-progress" style="width: 100%; height: 100%; background: linear-gradient(90deg, #4CAF50 0%, #ff4444 100%); transition: width 1s linear;"></div>
+        </div>
+        <div style="font-size: 0.9em; color: #666; margin-top: 5px;">Time remaining for current poll</div>
+    </div>
 </div>
 
 <div class="card" id="results-card" style="display: none;">
@@ -73,6 +84,10 @@
     let currentQuestionIndex = 0;
     let isPollingActive = false;
     
+    // Admin timer variables
+    let adminTimerInterval = null;
+    let adminTimeLeft = 30;
+    
     // Award options and intros from server
     const awards = {{ awards | tojson }};
     const awardOptions = {{ award_options | tojson }};
@@ -92,6 +107,11 @@
     const resultsCard = document.getElementById('results-card');
     const noVotesDiv = document.getElementById('no-votes');
     const voteBreakdownDiv = document.getElementById('vote-breakdown');
+    
+    // Admin timer elements
+    const adminTimerSection = document.getElementById('admin-timer-section');
+    const adminTimerDisplay = document.getElementById('admin-timer-display');
+    const adminTimerProgress = document.getElementById('admin-timer-progress');
     
     // Control buttons
     const startPollBtn = document.getElementById('start-poll');
@@ -135,6 +155,7 @@
         currentQuestionIndex = data.question_index;
         updateUI();
         updateResults({}); // Clear results for new poll
+        startAdminTimer(); // Start the admin timer
     });
 
     socket.on('poll_ended', (data) => {
@@ -142,6 +163,11 @@
         updateUI();
         updateVoteCount(data.total_votes || 0);
         updateResults(data.votes || {});
+        // Stop admin timer
+        if (adminTimerInterval) {
+            clearInterval(adminTimerInterval);
+            adminTimerSection.style.display = 'none';
+        }
     });
 
     socket.on('question_changed', (data) => {
@@ -149,6 +175,7 @@
         isPollingActive = true;
         updateUI();
         updateResults({}); // Clear results for new question
+        startAdminTimer(); // Start the admin timer for new question
     });
 
     socket.on('vote_update', (data) => {
@@ -228,12 +255,14 @@
                 console.log('Votes received:', votes);
                 
                 // Create results display
+                const totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
+                console.log('Total votes for calculation:', totalVotes);
+                
                 currentOptions.forEach(option => {
                     const voteCount = votes[option] || 0;
-                    const totalVotes = Object.values(votes).reduce((a, b) => a + b, 0);
                     const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
                     
-                    console.log(`Option: ${option}, Votes: ${voteCount}, Percentage: ${percentage}%`);
+                    console.log(`Option: ${option}, Votes: ${voteCount}, Total: ${totalVotes}, Percentage: ${percentage}%`);
                     
                     const resultItem = document.createElement('div');
                     resultItem.style.cssText = `
@@ -268,6 +297,48 @@
         } else {
             // Hide results card when no poll and no votes
             resultsCard.style.display = 'none';
+        }
+    }
+    
+    // Admin timer functions
+    function startAdminTimer() {
+        // Clear any existing timer
+        if (adminTimerInterval) {
+            clearInterval(adminTimerInterval);
+        }
+        
+        adminTimeLeft = 30;
+        updateAdminTimerDisplay();
+        adminTimerSection.style.display = 'block';
+        
+        adminTimerInterval = setInterval(() => {
+            adminTimeLeft--;
+            updateAdminTimerDisplay();
+            
+            if (adminTimeLeft <= 0) {
+                clearInterval(adminTimerInterval);
+                adminTimerSection.style.display = 'none';
+            }
+        }, 1000);
+    }
+    
+    function updateAdminTimerDisplay() {
+        adminTimerDisplay.textContent = adminTimeLeft;
+        
+        // Update progress bar
+        const progress = (adminTimeLeft / 30) * 100;
+        adminTimerProgress.style.width = progress + '%';
+        
+        // Change color as time runs out
+        if (adminTimeLeft <= 10) {
+            adminTimerDisplay.style.color = '#ff4444';
+            adminTimerProgress.style.background = '#ff4444';
+        } else if (adminTimeLeft <= 20) {
+            adminTimerDisplay.style.color = '#ff8800';
+            adminTimerProgress.style.background = 'linear-gradient(90deg, #ff8800 0%, #ff4444 100%)';
+        } else {
+            adminTimerDisplay.style.color = '#4CAF50';
+            adminTimerProgress.style.background = 'linear-gradient(90deg, #4CAF50 0%, #ff4444 100%)';
         }
     }
 
